@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.db
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+
+# Node
+node_modules/
+dist/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+coverage.xml
+.coverage
+
+# Claude
+.claude/settings.local.json

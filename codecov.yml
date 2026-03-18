@@ -1,0 +1,45 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 2%
+      backend:
+        target: 90%
+        threshold: 2%
+        flags:
+          - backend
+        paths:
+          - server/
+      frontend:
+        target: 80%
+        threshold: 2%
+        flags:
+          - frontend
+        paths:
+          - web/
+    patch:
+      default:
+        target: 80%
+
+flags:
+  backend:
+    paths:
+      - server/
+    carryforward: true
+  frontend:
+    paths:
+      - web/
+    carryforward: true
+
+comment:
+  layout: "reach,diff,flags,components"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "server/scripts/"
+  - "server/alembic/"
+  - "web/node_modules/"
+  - "**/*.test.*"
+  - "**/*.spec.*"

@@ -1,0 +1,101 @@
+[project]
+name = "testapp-server"
+version = "0.1.0"
+description = "Test App — FastAPI backend"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "gunicorn>=23.0.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.0",
+    "alembic>=1.14.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "bcrypt>=4.2.0",
+    "PyJWT[crypto]>=2.8.0",
+    "python-multipart>=0.0.12",
+    "email-validator>=2.2.0",
+    "httpx>=0.28.0",
+    "celery[redis]>=5.4.0",
+    "redis>=5.2.0",
+    "structlog>=24.4.0",
+    "sentry-sdk[fastapi]>=2.19.0",
+    "resend>=2.5.0",
+    "aiosmtplib>=3.0.0",
+    "Jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "factory-boy>=3.3.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "S",    # flake8-bandit (security)
+    "T20",  # flake8-print
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "S101",  # assert used in tests
+    "S105",  # hardcoded password (false positives in config)
+    "S106",  # hardcoded password (false positives in config)
+    "B008",  # Depends() in defaults is idiomatic FastAPI
+    "UP046", # Generic[] subclass is clearer than type parameter syntax for now
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S106"]
+"scripts/**" = ["T201", "S603", "S607"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=90"
+
+[tool.coverage.run]
+concurrency = ["greenlet"]
+omit = [
+    "app/workers/celery_app.py",      # Module-level Celery init — requires running broker
+    "app/workers/monitoring_worker.py", # Celery task definitions — tested via integration later
+    "app/main.py",                     # App factory + lifespan — glue code, tested via ASGI client
+    "app/middleware/rate_limit.py",    # Requires running Redis for meaningful testing
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+plugins = []
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "structlog.*", "sentry_sdk.*", "resend.*"]
+ignore_missing_imports = true
