@@ -2,11 +2,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { navigate } from "vike/client/router";
 
 import { deleteCookie, getCookie } from "@/lib/cookies";
+import { authKeys } from "@/lib/query-keys";
 import type { User } from "@/lib/types";
 import { getMe } from "@/services/auth";
 
-/** React Query key for the current user. */
-export const CURRENT_USER_KEY = ["currentUser"];
+/**
+ * @deprecated Import `authKeys.currentUser()` from `@/lib/query-keys` instead.
+ * Retained so tests and older call sites still have a named export.
+ */
+export const CURRENT_USER_KEY = authKeys.currentUser();
 
 /**
  * Fetch the current user via React Query.
@@ -14,7 +18,7 @@ export const CURRENT_USER_KEY = ["currentUser"];
  */
 export function useCurrentUser() {
   return useQuery<User>({
-    queryKey: CURRENT_USER_KEY,
+    queryKey: authKeys.currentUser(),
     queryFn: getMe,
     enabled: typeof window !== "undefined" && !!getCookie("access_token"),
     retry: false,
