@@ -91,6 +91,8 @@ describe("useAuth hooks", () => {
   });
 
   it("CURRENT_USER_KEY is exported for cache invalidation", () => {
-    expect(CURRENT_USER_KEY).toEqual(["currentUser"]);
+    // Hierarchical key so queryClient.invalidateQueries({ queryKey: ['auth'] })
+    // wipes every auth-related cache entry — see lib/query-keys.ts.
+    expect(CURRENT_USER_KEY).toEqual(["auth", "currentUser"]);
   });
 });

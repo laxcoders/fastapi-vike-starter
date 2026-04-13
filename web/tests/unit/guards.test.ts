@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { guard as indexGuard } from "@/pages/index/+guard";
 import { guard as loginGuard } from "@/pages/login/+guard";
@@ -140,5 +140,82 @@ describe("forgot-password guard", () => {
     } catch (err: unknown) {
       expect(getRedirectUrl(err)).toBe("/app/dashboard");
     }
+  });
+});
+
+/**
+ * SSR branch — guards run on both server and client. During server render
+ * `typeof window === "undefined"` is true, so the cookie source is
+ * `pageContext.headers.cookie` instead of `document.cookie`. This block
+ * covers that branch by stubbing the global `window` to `undefined` and
+ * passing a real request-style headers bag.
+ */
+describe("guards on the server (SSR branch)", () => {
+  beforeEach(() => {
+    clearCookies();
+    vi.stubGlobal("window", undefined);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function makeSsrContext(cookieHeader: string): PageContext {
+    return {
+      headers: { cookie: cookieHeader },
+    } as unknown as PageContext;
+  }
+
+  it("app guard: redirects to /login when SSR headers carry no tokens", () => {
+    try {
+      appGuard(makeSsrContext(""));
+      expect.fail("Expected redirect to be thrown");
+    } catch (err: unknown) {
+      expect(getRedirectUrl(err)).toBe("/login");
+    }
+  });
+
+  it("app guard: lets through when SSR headers include access_token", () => {
+    expect(() => appGuard(makeSsrContext("access_token=abc; other=1"))).not.toThrow();
+  });
+
+  it("app guard: treats a missing headers bag as unauthenticated", () => {
+    // Exercises the `?? ""` fallback when pageContext.headers is undefined.
+    const ctx = {} as unknown as PageContext;
+    try {
+      appGuard(ctx);
+      expect.fail("Expected redirect to be thrown");
+    } catch (err: unknown) {
+      expect(getRedirectUrl(err)).toBe("/login");
+    }
+  });
+
+  it("login guard: redirects to /app/dashboard when SSR headers include refresh_token", () => {
+    try {
+      loginGuard(makeSsrContext("refresh_token=xyz"));
+      expect.fail("Expected redirect to be thrown");
+    } catch (err: unknown) {
+      expect(getRedirectUrl(err)).toBe("/app/dashboard");
+    }
+  });
+
+  it("login guard: lets through when SSR headers carry no tokens", () => {
+    expect(() => loginGuard(makeSsrContext("unrelated=1"))).not.toThrow();
+  });
+
+  it("index guard: redirects when SSR headers include a token", () => {
+    try {
+      indexGuard(makeSsrContext("access_token=t"));
+      expect.fail("Expected redirect to be thrown");
+    } catch (err: unknown) {
+      expect(getRedirectUrl(err)).toBe("/app/dashboard");
+    }
+  });
+
+  it("register guard: lets through unauthenticated SSR requests", () => {
+    expect(() => registerGuard(makeSsrContext(""))).not.toThrow();
+  });
+
+  it("forgot-password guard: lets through unauthenticated SSR requests", () => {
+    expect(() => forgotPasswordGuard(makeSsrContext(""))).not.toThrow();
   });
 });
