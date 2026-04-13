@@ -53,11 +53,20 @@ def error_response(
 
 
 def _is_sensitive_loc(loc: tuple[Any, ...]) -> bool:
-    """Return True if the last segment of a Pydantic ``loc`` looks sensitive."""
-    if not loc:
-        return False
-    last = str(loc[-1]).lower()
-    return any(fragment in last for fragment in SENSITIVE_FIELD_FRAGMENTS)
+    """Return True if *any* segment of a Pydantic ``loc`` looks sensitive.
+
+    We walk the full loc tuple, not just the last element, so that nested
+    errors under a sensitive ancestor still get redacted. For example, a
+    validation error at ``("body", "api_key", "format")`` should redact the
+    input: the leaf field is ``format``, but anything attached to an
+    ``api_key`` subtree is assumed sensitive. Index segments (ints from
+    list items) are cast to str and harmlessly never match.
+    """
+    for segment in loc:
+        segment_str = str(segment).lower()
+        if any(fragment in segment_str for fragment in SENSITIVE_FIELD_FRAGMENTS):
+            return True
+    return False
 
 
 def sanitize_validation_errors(errors: Sequence[Any]) -> list[dict[str, Any]]:
